@@ -1,55 +1,51 @@
-const path = require("path")
-const webpack = require("webpack")
-const HtmlWebPackPlugin = require('html-webpack-plugin')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const WorkboxPlugin = require('workbox-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const { merge } = require("webpack-merge");
+const path = require("path");
+const common = require("./webpack.common.js");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 
-module.exports = {
-    mode: 'production',
-    output: {
-        libraryTarget: 'var',
-        library: 'Client'
-    },
-    entry: './src/client/index.js',
-    optimization: {
-        minimizer: [new TerserPlugin({}), new OptimizeCSSAssetsPlugin({})],
-    },
-    node: {
-        fs: "empty"
-     },
-    module: {
-        rules: [
-                {
-                    test: '/\.js$/',
-                    exclude: /node_modules/,
-                    loader: "babel-loader"
-                },
-                {
-                    test: /\.scss$/,
-                    use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
-                },
-                {
-                    test: /\.(png|svg|jpg|gif)$/,
-                    use: [
-                            'file-loader',
-                        ],
-                }
-        ]
-    },
-    plugins: [
-    
-        new HtmlWebPackPlugin({
-            template: "./src/client/views/index.html",
-            filename: "./index.html",
-        }),
-        new CleanWebpackPlugin({
-            dry: false,
-        }),
-        new MiniCssExtractPlugin({filename: '[name].css'}),
-        new WorkboxPlugin.GenerateSW()
-    ]
+module.exports = merge(common, {
+  mode: "production",
 
-}
+  devtool: "hidden-source-map", // Keeps source map hidden from users but available for debugging.
+
+  module: {
+    rules: [
+      {
+        test: /\.s[ac]ss$/i,
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+      },
+    ],
+  },
+
+  output: {
+    filename: "bundle.[contenthash].js",
+    path: path.resolve(__dirname, "dist"),
+    libraryTarget: "var",
+    library: "Client",
+    clean: true, // Ensures a fresh build every time.
+  },
+
+  optimization: {
+    minimize: true,
+    minimizer: [
+      "...", // Keep default Webpack minimizers (e.g., JS, images)
+      new CssMinimizerPlugin(), // Minify CSS
+      new TerserPlugin({
+        terserOptions: {
+          compress: { drop_console: true }, // Strip console logs for a cleaner production build
+        },
+      }),
+    ],
+    splitChunks: {
+      chunks: "all", // Split vendor & app code into separate bundles
+    },
+  },
+
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: "style.[contenthash].css", // Cache-busting CSS file
+    }),
+  ],
+});

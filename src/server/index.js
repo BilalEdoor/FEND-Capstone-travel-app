@@ -1,73 +1,62 @@
-const dotenv = require('dotenv');
-dotenv.config();
-const apiKey = process.env.API_KEY;
-const geoUser = process.env.GEO_USER_NAME;
-const weatherKey = process.env.WEBIT_KEY;
-const pixaKey = process.env.PIX_API;
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-var path = require('path')
-const axios = require('axios')
-const express = require('express')
-const bodyParser = require('body-parser');
+const { getCityLoc } = require("./getCityLoc");
+const { weatherTemp } = require("./weatherTemp");
+const { getCityPic } = require("./getCityPic");
 
+const app = express();
+const port = process.env.PORT || 8000;
 
-// Cors for cross origin allowance
-const cors = require('cors');
-
-const app = express()
-
-//app.use(express.static('src/client'))
-app.use(express.static('dist'))
-
-/* Middleware*/
-//Here we are configuring express to use body-parser as middle-ware.
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// Middleware setup
+app.use(express.json());
+app.use(express.static("dist"));
 app.use(cors());
 
-console.log(__dirname)
+// Environment variables setup
+const username = `${process.env.USERNAME}${process.env.USERNUMBER}`;
+const WEATHER_KEY = process.env.WEATHER_KEY;
+const PIXABAY_KEY = process.env.pixabay_key;
 
-app.get('/', function (req, res) {
-    //res.sendFile('/client/views/index.html', { root: __dirname + '/..' })
+// Routes
+app.get("/", (req, res) => res.render("index.html"));
 
-    res.sendFile('dist/index.html')
-})
+// City location route
+app.post("/getCity", async (req, res) => {
+    const { city } = req.body;
+    try {
+        const location = await getCityLoc(city, username);
+        res.json(location);
+    } catch (error) {
+        console.error("Error fetching city location:", error.message);
+        res.status(500).json({ error: "Failed to fetch city location." });
+    }
+});
 
-// designates what port the app will listen to for incoming requests
-app.listen(8082, function () {
-    console.log('listening on port 8082!')
-})
+// Weather route
+app.post("/getWeather", async (req, res) => {
+    const { lng, lat, remainingDays } = req.body;
+    try {
+        const weatherData = await weatherTemp(lng, lat, remainingDays, WEATHER_KEY);
+        res.json(weatherData);
+    } catch (error) {
+        console.error("Error fetching weather data:", error.message);
+        res.status(500).json({ error: "Failed to fetch weather data." });
+    }
+});
 
+// City picture route
+app.post("/getCityPic", async (req, res) => {
+    const { city_name } = req.body;
+    try {
+        const cityImage = await getCityPic(city_name, PIXABAY_KEY);
+        res.json(cityImage);
+    } catch (error) {
+        console.error("Error fetching city picture:", error.message);
+        res.status(500).json({ error: "Failed to fetch city picture." });
+    }
+});
 
-app.post('/pixabay', (req, res) => {
-    const url = `https://pixabay.com/api/?key=${pixaKey}&q=${req.body.destination}&category=places&image_type=photo`
-        axios({
-            url: url,
-            responseType:'json'
-    
-        }).then(data => res.json(data.data))
-        console.log(url);
-            
-    })
-
-app.post('/geonames', (req, res) => {
-    const url = `http://api.geonames.org/postalCodeSearchJSON?placename=${req.body.destination}&maxRows=10&username=${geoUser}`
-        axios({
-            url: url,
-            responseType:'json'
-    
-        }).then(data => res.json(data.data))
-         console.log(url);  
-    })
-
-    app.post('/weatherbit', (req, res) => {
-        
-        const url = `http://api.weatherbit.io/v2.0/forecast/daily?city=${req.body.destination}&days=${req.body.daysOfForecast}&key=${weatherKey}`
-        console.log(url); 
-            axios({
-                url: url,
-                responseType:'json'
-
-            }).then(data => res.json(data.data))
-                 
-    })
+// Server startup
+app.listen(port, () => console.log(`✅ Server is running on http://localhost:${port}`));
