@@ -4,11 +4,12 @@ const common = require("./webpack.common.js");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = merge(common, {
   mode: "production",
 
-  devtool: "hidden-source-map", // Keeps source map hidden from users but available for debugging.
+  devtool: "hidden-source-map", // 🔍 احتفاظ بخريطة المصدر لكن بعيد عن المستخدم
 
   module: {
     rules: [
@@ -22,30 +23,55 @@ module.exports = merge(common, {
   output: {
     filename: "bundle.[contenthash].js",
     path: path.resolve(__dirname, "dist"),
+    publicPath: "/", // ✅ مسارات ديناميكية
     libraryTarget: "var",
     library: "Client",
-    clean: true, // Ensures a fresh build every time.
+    clean: true,
   },
 
   optimization: {
     minimize: true,
     minimizer: [
-      "...", // Keep default Webpack minimizers (e.g., JS, images)
-      new CssMinimizerPlugin(), // Minify CSS
+      "...",
+      new CssMinimizerPlugin(), // ✅ ضغط CSS
       new TerserPlugin({
         terserOptions: {
-          compress: { drop_console: true }, // Strip console logs for a cleaner production build
+          compress: { drop_console: true }, // 🚀 إزالة console.log من الإنتاج
         },
       }),
     ],
     splitChunks: {
-      chunks: "all", // Split vendor & app code into separate bundles
+      chunks: "all",
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: "vendors",
+          chunks: "all",
+          priority: 1,
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
     },
   },
 
   plugins: [
     new MiniCssExtractPlugin({
-      filename: "style.[contenthash].css", // Cache-busting CSS file
+      filename: "style.[contenthash].css",
+    }),
+
+    // ✅ تحسين تحميل الصفحة
+    new HtmlWebpackPlugin({
+      template: "./src/client/views/index.html",
+      filename: "index.html",
+      minify: {
+        collapseWhitespace: true,
+        removeComments: true,
+        removeRedundantAttributes: true,
+      },
     }),
   ],
 });

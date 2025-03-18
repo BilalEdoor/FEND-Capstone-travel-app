@@ -2,12 +2,13 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { getCityLoc } = require("./getCityLoc");
-const { weatherTemp } = require("./weatherTemp");
-const { getCityPic } = require("./getCityPic");
+// Import functions with new names
+const { fetchLocationData } = require("./locationService");
+const { retrieveWeatherInfo } = require("./weatherService");
+const { fetchCityImage } = require("./imageService");
 
 const app = express();
-const port = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8000;
 
 // Middleware setup
 app.use(express.json());
@@ -15,48 +16,48 @@ app.use(express.static("dist"));
 app.use(cors());
 
 // Environment variables setup
-const username = `${process.env.USERNAME}${process.env.USERNUMBER}`;
-const WEATHER_KEY = process.env.WEATHER_KEY;
-const PIXABAY_KEY = process.env.pixabay_key;
+const geoUsername = `${process.env.USERNAME}${process.env.USERNUMBER}`;
+const weatherApiKey = process.env.WEATHER_KEY;
+const imageApiKey = process.env.pixabay_key;
 
-// Routes
+// Root route
 app.get("/", (req, res) => res.render("index.html"));
 
-// City location route
-app.post("/getCity", async (req, res) => {
+// Endpoint for city location data
+app.post("/location", async (req, res) => {
     const { city } = req.body;
     try {
-        const location = await getCityLoc(city, username);
-        res.json(location);
-    } catch (error) {
-        console.error("Error fetching city location:", error.message);
-        res.status(500).json({ error: "Failed to fetch city location." });
+        const cityData = await fetchLocationData(city, geoUsername);
+        res.json(cityData);
+    } catch (err) {
+        console.error("❌ Location retrieval failed:", err.message);
+        res.status(500).json({ error: "Could not retrieve location data. Please try again!" });
     }
 });
 
-// Weather route
-app.post("/getWeather", async (req, res) => {
-    const { lng, lat, remainingDays } = req.body;
+// Endpoint for weather data
+app.post("/weather", async (req, res) => {
+    const { lng, lat, daysRemaining } = req.body;
     try {
-        const weatherData = await weatherTemp(lng, lat, remainingDays, WEATHER_KEY);
-        res.json(weatherData);
-    } catch (error) {
-        console.error("Error fetching weather data:", error.message);
-        res.status(500).json({ error: "Failed to fetch weather data." });
+        const weatherInfo = await retrieveWeatherInfo(lng, lat, daysRemaining, weatherApiKey);
+        res.json(weatherInfo);
+    } catch (err) {
+        console.error("❌ Weather retrieval failed:", err.message);
+        res.status(500).json({ error: "Could not retrieve weather information. Please try again!" });
     }
 });
 
-// City picture route
-app.post("/getCityPic", async (req, res) => {
-    const { city_name } = req.body;
+// Endpoint for city image
+app.post("/city-image", async (req, res) => {
+    const { cityName } = req.body;
     try {
-        const cityImage = await getCityPic(city_name, PIXABAY_KEY);
+        const cityImage = await fetchCityImage(cityName, imageApiKey);
         res.json(cityImage);
-    } catch (error) {
-        console.error("Error fetching city picture:", error.message);
-        res.status(500).json({ error: "Failed to fetch city picture." });
+    } catch (err) {
+        console.error("❌ City image retrieval failed:", err.message);
+        res.status(500).json({ error: "Could not retrieve city image. Please try again!" });
     }
 });
 
-// Server startup
-app.listen(port, () => console.log(`✅ Server is running on http://localhost:${port}`));
+// Start the server
+app.listen(PORT, () => console.log(`🚀 Server up and running at http://localhost:${PORT}`));

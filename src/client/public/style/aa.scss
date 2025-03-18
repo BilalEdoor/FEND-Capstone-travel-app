@@ -1,16 +1,16 @@
-$aa: (
-  "sm": 576px,
-  "md": 768px,
-  "lg": 992px,
-  "xl": 1200px
+$device-sizes: (
+  "mobile": 576px,
+  "tablet": 768px,
+  "desktop": 992px,
+  "widescreen": 1200px
 );
 
-@mixin respond-to($bb) {
-  @if map-has-key($aa, $breakpoint) {
-    @media (min-width: map-get($aa, $breakpoint)) {
+@mixin device-breakpoint($device) {
+  @if map-has-key($device-sizes, $device) {
+    @media (min-width: map-get($device-sizes, $device)) {
       @content;
     }
   } @else {
-    @error "Invalid breakpoint name: #{$breakpoint}. Available aa: #{map-keys($aa)}.";
+    @error "Invalid device type: '#{$device}'. Please use one of: #{map-keys($device-sizes)}.";
   }
 }
