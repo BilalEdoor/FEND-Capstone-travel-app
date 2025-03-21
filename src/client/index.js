@@ -1,9 +1,9 @@
 import "./assets/styles/main.scss";
-import { processForm } from "c:/web_dev/udacity-training/Project-5/src/client/app.js";
+import { processForm as handleTripForm } from "c:/web_dev/udacity-training/Project-5/src/client/app.js";
 
-// Export functionalities in a reorganized object
-const appFunctions = {
-    processForm
+// Reorganized object with renamed method
+const journeyUtils = {
+    handleTripForm,
 };
 
-export default appFunctions;
+export default journeyUtils;

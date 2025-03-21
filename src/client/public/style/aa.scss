@@ -1,16 +1,16 @@
-$device-sizes: (
-  "mobile": 576px,
+$screen-sizes: (
+  "phone": 576px,
   "tablet": 768px,
-  "desktop": 992px,
-  "widescreen": 1200px
+  "laptop": 992px,
+  "large-screen": 1200px
 );
 
-@mixin device-breakpoint($device) {
-  @if map-has-key($device-sizes, $device) {
-    @media (min-width: map-get($device-sizes, $device)) {
+@mixin responsive($screen) {
+  @if map-has-key($screen-sizes, $screen) {
+    @media (min-width: map-get($screen-sizes, $screen)) {
       @content;
     }
   } @else {
-    @error "Invalid device type: '#{$device}'. Please use one of: #{map-keys($device-sizes)}.";
+    @error "Unknown screen type: '#{$screen}'. Available options: #{map-keys($screen-sizes)}.";
   }
 }

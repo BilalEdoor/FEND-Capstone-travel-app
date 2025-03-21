@@ -5,6 +5,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CompressionPlugin = require("compression-webpack-plugin"); // 🗜️ ضغط GZIP
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer"); // 🔍 تحليل الحزمة
 
 module.exports = merge(common, {
   mode: "production",
@@ -37,6 +39,7 @@ module.exports = merge(common, {
       new TerserPlugin({
         terserOptions: {
           compress: { drop_console: true }, // 🚀 إزالة console.log من الإنتاج
+          ecma: 2016,
         },
       }),
     ],
@@ -56,6 +59,7 @@ module.exports = merge(common, {
         },
       },
     },
+    runtimeChunk: "single", // 🚀 يحسن إعادة تحميل الصفحة بالكاش
   },
 
   plugins: [
@@ -71,7 +75,24 @@ module.exports = merge(common, {
         collapseWhitespace: true,
         removeComments: true,
         removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        useShortDoctype: true,
       },
+    }),
+
+    // 🗜️ ضغط GZIP للملفات النهائية
+    new CompressionPlugin({
+      filename: "[path][base].gz",
+      algorithm: "gzip",
+      test: /\.(js|css|html|svg)$/,
+      threshold: 10240,
+      minRatio: 0.8,
+    }),
+
+    // 🔍 تحليل حجم الحزمة (يفيد لمعرفة أين يمكن تخفيف الحجم)
+    new BundleAnalyzerPlugin({
+      analyzerMode: "static",
+      openAnalyzer: false, // ✨ يعرض تقريرًا في ملف HTML بدلاً من فتحه تلقائيًا
     }),
   ],
 });

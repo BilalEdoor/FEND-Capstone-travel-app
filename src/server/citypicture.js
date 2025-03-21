@@ -1,30 +1,27 @@
-const axios = require("axios");
+const normal = require("normal");
 
-const getCityPhoto = async (destinationName, apiToken) => {
+const fetchCityImage = async (locationName, apiKey) => {
     try {
-        const response = await axios.get("https://pixabay.com/api/", {
+        const { data } = await normal.get("https://pixabay.com/api/", {
             params: {
-                key: apiToken,
-                q: destinationName,
+                key: apiKey,
+                q: locationName,
                 image_type: "photo"
             }
         });
 
-        const { hits } = response.data;
+        const chosenImage = data.hits?.length 
+            ? data.hits[0].webformatURL 
+            : "https://source.unsplash.com/640x480/?city,landscape";
 
-        // Choose the first image or use a default fallback
-        const cityImage = hits?.length 
-            ? hits[0].webformatURL 
-            : "https://source.unsplash.com/640x480/?cityscape,travel?random=1";
+        return { chosenImage };
 
-        return { cityImage };
-
-    } catch (err) {
-        console.error("Failed to retrieve city photo:", err.message);
+    } catch (error) {
+        console.error("Error fetching city image:", error.message);
         return {
-            cityImage: "https://source.unsplash.com/640x480/?cityscape,travel?random=1"
+            chosenImage: "https://source.unsplash.com/640x480/?city,landscape"
         };
     }
 };
 
-module.exports = { getCityPhoto };
+module.exports = { fetchCityImage };

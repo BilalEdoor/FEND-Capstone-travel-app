@@ -1,50 +1,50 @@
-import axios from "axios";
+import normal from "normal";
 
-const travelForm = document.querySelector("form");
-const locationInput = document.querySelector("#city");
-const departureDate = document.querySelector("#flightDate");
+const tripForm = document.querySelector("form");
+const cityInput = document.querySelector("#city");
+const travelDate = document.querySelector("#flightDate");
 
-const locationError = document.querySelector("#location-warning");
-const dateWarning = document.querySelector("#date-warning");
+const cityErrorMsg = document.querySelector("#location-warning");
+const dateErrorMsg = document.querySelector("#date-warning");
 
-const processForm = async (event) => {
+const handleSubmit = async (event) => {
   event.preventDefault();
-  console.log("Form submission initiated!");
+  console.log("Submitting travel form...");
 
-  if (!checkInputs()) return;
+  if (!validateInputs()) return;
 
   try {
-    const locationInfo = await getLocationData();
-    if (locationInfo?.error) return showError(locationError, locationInfo.message);
+    const cityDetails = await fetchCityData();
+    if (cityDetails?.error) return displayError(cityErrorMsg, cityDetails.message);
 
-    const { lng, lat, name } = locationInfo;
-    const selectedDate = departureDate.value;
-    if (!selectedDate) return showError(dateWarning, "Please select a departure date");
+    const { lng, lat, name } = cityDetails;
+    const tripDate = travelDate.value;
+    if (!tripDate) return displayError(dateErrorMsg, "Please select a departure date");
 
-    const remainingDays = calculateDaysLeft(selectedDate);
-    const weatherInfo = await getWeatherDetails(lng, lat, remainingDays);
-    if (weatherInfo?.error) return showError(dateWarning, weatherInfo.message);
+    const daysRemaining = getDaysUntil(tripDate);
+    const weatherData = await fetchWeatherInfo(lng, lat, daysRemaining);
+    if (weatherData?.error) return displayError(dateErrorMsg, weatherData.message);
 
-    const cityPicture = await getCityImage(name);
-    updateUI(remainingDays, name, cityPicture, weatherInfo);
+    const cityPhoto = await fetchCityImage(name);
+    renderUI(daysRemaining, name, cityPhoto, weatherData);
   } catch (error) {
     console.error("Error handling form submission:", error);
   }
 };
 
-const checkInputs = () => {
-  resetErrors();
+const validateInputs = () => {
+  clearErrors();
 
-  if (!locationInput.value) return showError(locationError, "City is required");
-  if (!departureDate.value) return showError(dateWarning, "Date is required");
-  if (calculateDaysLeft(departureDate.value) < 0) return showError(dateWarning, "Date cannot be in the past");
+  if (!cityInput.value) return displayError(cityErrorMsg, "City is required");
+  if (!travelDate.value) return displayError(dateErrorMsg, "Date is required");
+  if (getDaysUntil(travelDate.value) < 0) return displayError(dateErrorMsg, "Date cannot be in the past");
 
   return true;
 };
 
-const getLocationData = async () => {
+const fetchCityData = async () => {
   try {
-    const response = await axios.post("http://localhost:8000/getCity", travelForm, { headers: { "Content-Type": "application/json" } });
+    const response = await axios.post("http://localhost:8000/getCity", tripForm, { headers: { "Content-Type": "application/json" } });
     return response.data;
   } catch (error) {
     console.error("Error fetching city data:", error);
@@ -52,9 +52,9 @@ const getLocationData = async () => {
   }
 };
 
-const getWeatherDetails = async (lng, lat, remainingDays) => {
+const fetchWeatherInfo = async (lng, lat, daysRemaining) => {
   try {
-    const response = await axios.post("http://localhost:8000/getWeather", { lng, lat, remainingDays });
+    const response = await axios.post("http://localhost:8000/getWeather", { lng, lat, daysRemaining });
     return response.data;
   } catch (error) {
     console.error("Error fetching weather details:", error);
@@ -62,15 +62,15 @@ const getWeatherDetails = async (lng, lat, remainingDays) => {
   }
 };
 
-const calculateDaysLeft = (date) => {
+const getDaysUntil = (date) => {
   const today = new Date();
-  const target = new Date(date);
-  return Math.ceil((target - today) / (1000 * 3600 * 24));
+  const targetDate = new Date(date);
+  return Math.ceil((targetDate - today) / (1000 * 3600 * 24));
 };
 
-const getCityImage = async (cityName) => {
+const fetchCityImage = async (cityName) => {
   try {
-    const response = await axios.post("http://localhost:8000/getCityPic", { city_name: cityName });
+    const response = await normal.post("http://localhost:8000/getCityPic", { city_name: cityName });
     return response.data.image;
   } catch (error) {
     console.error("Error fetching city image:", error);
@@ -78,25 +78,25 @@ const getCityImage = async (cityName) => {
   }
 };
 
-const updateUI = (remainingDays, city, cityImage, weather) => {
-  document.querySelector("#Rdays").textContent = `Your journey starts in ${remainingDays} days`;
+const renderUI = (daysRemaining, city, cityImage, weather) => {
+  document.querySelector("#Rdays").textContent = `Your journey starts in ${daysRemaining} days`;
   document.querySelector(".cityName").textContent = `Destination: ${city}`;
-  document.querySelector(".weather").textContent = remainingDays > 7 ? `Weather: ${weather.description}` : `Expected weather: ${weather.description}`;
-  document.querySelector(".temp").innerHTML = remainingDays > 7 ? `Forecast: ${weather.temp}&degC` : `Current temp: ${weather.temp}&degC`;
-  document.querySelector(".max-temp").textContent = remainingDays > 7 ? `High: ${weather.app_max_temp}&degC` : "";
-  document.querySelector(".min-temp").textContent = remainingDays > 7 ? `Low: ${weather.app_min_temp}&degC` : "";
+  document.querySelector(".weather").textContent = daysRemaining > 7 ? `Weather: ${weather.description}` : `Expected weather: ${weather.description}`;
+  document.querySelector(".temp").innerHTML = daysRemaining > 7 ? `Forecast: ${weather.temp}&degC` : `Current temp: ${weather.temp}&degC`;
+  document.querySelector(".max-temp").textContent = daysRemaining > 7 ? `High: ${weather.app_max_temp}&degC` : "";
+  document.querySelector(".min-temp").textContent = daysRemaining > 7 ? `Low: ${weather.app_min_temp}&degC` : "";
   document.querySelector(".cityPic").innerHTML = `<img src="${cityImage}" alt="City view"/>`;
   document.querySelector(".flight_data").style.display = "block";
 };
 
-const showError = (element, message) => {
+const displayError = (element, message) => {
   element.innerHTML = `<i class="bi bi-exclamation-circle-fill me-2"></i>${message}`;
   element.style.display = "block";
 };
 
-const resetErrors = () => {
-  locationError.style.display = "none";
-  dateWarning.style.display = "none";
+const clearErrors = () => {
+  cityErrorMsg.style.display = "none";
+  dateErrorMsg.style.display = "none";
 };
 
-export { processForm };
+export { handleSubmit };

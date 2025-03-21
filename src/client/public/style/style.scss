@@ -1,4 +1,4 @@
-@import "./aa.scss";
+@import "./styles/aa.scss";
 
 * {
   box-sizing: border-box;
@@ -11,17 +11,17 @@ body {
   background-size: cover;
   font-family: "Poppins", sans-serif;
 
-  .main-container {
+  .container-wrapper {
     min-height: 100vh;
 
-    .header-bar {
+    .top-bar {
       background-color: #222;
       color: #f4f4f4;
       padding: 15px;
 
-      .title-text {
+      .heading-title {
         font-size: 22px;
-        @include device-breakpoint("mobile") {
+        @include responsive("phone") {
           font-size: 45px;
         }
         margin: 0 auto;
@@ -30,15 +30,15 @@ body {
       }
     }
 
-    #input-section {
+    #form-section {
       width: 85%;
-      @include device-breakpoint("desktop") {
+      @include responsive("laptop") {
         width: 55%;
       }
-      #location-warning {
+      #location-error {
         display: none;
       }
-      #date-warning {
+      #date-error {
         display: none;
       }
     }

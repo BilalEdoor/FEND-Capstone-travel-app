@@ -1,32 +1,32 @@
 const axios = require("axios");
 
-const getLocationData = async (destination, userKey) => {
+const fetchDestinationDetails = async (placeName, apiKey) => {
     try {
-        const result = await axios.get(`https://secure.geonames.org/searchJSON`, {
+        const response = await axios.get(`https://secure.geonames.org/searchJSON`, {
             params: {
-                q: destination,
+                q: placeName,
                 maxRows: 1,
-                username: userKey
+                username: apiKey
             }
         });
 
-        const { data } = result;
+        const { data } = response;
 
         if (!data.geonames.length) {
             return {
-                message: "Oops! Couldn't find this destination. Double-check the spelling.",
+                message: "Destination not found. Please check the spelling and try again.",
                 error: true
             };
         }
 
         return data.geonames[0];
-    } catch (err) {
-        console.error("Unable to retrieve location info:", err.message);
+    } catch (error) {
+        console.error("Error fetching destination details:", error.message);
         return {
-            message: "Something went wrong while getting the location. Try again later!",
+            message: "Error retrieving location data. Please try again later.",
             error: true
         };
     }
 };
 
-module.exports = { getLocationData };
+module.exports = { fetchDestinationDetails };
